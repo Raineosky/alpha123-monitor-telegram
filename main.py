@@ -1,36 +1,39 @@
-import os
-import time
 import requests
+import time
+from bs4 import BeautifulSoup
+import os
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
-url = "https://alpha123.uk/"
-last_content = None
+URL = "https://alpha123.uk/"
+CHECK_INTERVAL = 600  # 10 分鐘
 
-def fetch_page():
+last_content = ""
+
+def get_page_content():
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(URL, timeout=10)
         response.raise_for_status()
-        return response.text
+        soup = BeautifulSoup(response.text, 'html.parser')
+        return soup.get_text()
     except Exception as e:
         return f"Error: {e}"
 
 def send_telegram_message(message):
-    telegram_api = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    data = {
         "chat_id": CHAT_ID,
-        "text": message
+        "text": message,
     }
-    try:
-        requests.post(telegram_api, data=payload)
-    except Exception as e:
-        print("Failed to send Telegram message:", e)
+    requests.post(url, data=data)
 
 while True:
-    current_content = fetch_page()
     global last_content
-    if current_content != last_content and "Error" not in current_content:
-        send_telegram_message("📢 網頁內容已變更： https://alpha123.uk/")
-        last_content = current_content
-    time.sleep(600)  # 每 10 分鐘檢查一次
+    content = get_page_content()
+
+    if content != last_content:
+        send_telegram_message("網站內容有變化！")
+        last_content = content
+
+    time.sleep(CHECK_INTERVAL)
