@@ -1,0 +1,7 @@
+services:
+  - type: cron
+    name: alpha123-monitor
+    runtime: python
+    buildCommand: ""
+    startCommand: "python main.py"
+    schedule: "*/10 * * * *"
